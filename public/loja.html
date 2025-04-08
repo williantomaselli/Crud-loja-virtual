@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loja Virtual</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500&display=swap" rel="stylesheet">
+  <!-- Font Awesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 
+    integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2DhYVTRkZ5YB4VylVU6zr6oYJ7dzic2jH5vjkt1BU9y+QqJYIhUvlrOB+erfd+8mg==" 
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="loja.css">
+  <style>
+    /* Grid para exibir os cards com 3 itens por linha */
+    .products-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .product-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+      /* Garante que todos os cards tenham a mesma altura */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .product-card img {
+      max-width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+    .card-info h3 { margin: 10px 0; }
+    .card-info p { margin: 5px 0; }
+    .buy-btn { margin-top: 10px; padding: 8px; background-color: #007BFF; color: #fff; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="loja.html" class="logo">Mamazon</a>
+        <ul class="nav-links">
+          <li><a href="home.html" class="active">Cadastro</a></li>
+          <li><a href="loja.html">Produtos</a></li>
+          <li><a href="#">Contato</a></li>
+          <li><a href="#"><i class="fas fa-shopping-cart"></i> Carrinho</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="hero">
+      <div class="hero-content">
+        <h1>Bem-vindo à Mamazon</h1>
+        <p>Os melhores produtos com qualidade e preços incríveis!</p>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Buscar produtos...">
+          <button id="searchBtn"><i class="fas fa-search"></i></button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="products-container" id="productsContainer">
+      <!-- Os produtos serão carregados aqui -->
+    </div>
+  </main>
+  <footer>
+    <p>&copy; 2025 Loja Virtual. Todos os direitos reservados.</p>
+  </footer>
+
+  <script>
+    // Função para carregar os produtos do usuário
+    async function loadProducts() {
+      try {
+        const response = await fetch('/products');
+        if (!response.ok) throw new Error('Erro ao carregar produtos.');
+        const products = await response.json();
+        displayProducts(products);
+      } catch (error) {
+        console.error(error);
+        document.getElementById('productsContainer').innerText = error.message;
+      }
+    }
+    
+    // Renderiza os produtos em cards com layout de grid
+    function displayProducts(products) {
+      const container = document.getElementById('productsContainer');
+      container.innerHTML = '';
+      if (products.length === 0) {
+        container.innerHTML = '<p>Nenhum produto encontrado.</p>';
+        return;
+      }
+      products.forEach(produto => {
+        const card = document.createElement('div');
+        card.classList.add('product-card');
+        card.innerHTML = `
+          <div class="card-img">
+            ${produto.imagem ? `<img src="${produto.imagem}" alt="${produto.nome}">` : '<div>Sem imagem</div>'}
+          </div>
+          <div class="card-info">
+            <h3>${produto.nome}</h3>
+            <p>${produto.descricao}</p>
+            <p>R$ ${parseFloat(produto.preco).toFixed(2)}</p>
+            <p>Estoque: ${produto.quantidade}</p>
+            <button class="buy-btn">Comprar</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadProducts);
+  </script>
+  <!-- Font Awesome Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" 
+    integrity="sha512-NVvny6e+9s/73Iug8SGn3F7DQFDYDJ6QqWgxcv42mRTs+vS/8UeZ5M/88NPKR5WS+DTYI69rPN6Q1Vvq2+TFLA==" 
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>

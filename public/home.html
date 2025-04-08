@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Produtos</title>
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="home.css">
+  <style>
+    /* Estilos extras para a tabela de listagem */
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: left; }
+    .btn { padding: 6px 10px; margin-right: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <!-- Navbar conforme seu design -->
+  <nav class="navbar">
+    <div class="container-nav">
+      <a href="home.html" class="nav-link active">Cadastro</a>
+      <a href="loja.html" class="nav-link">Produtos</a>
+    </div>
+  </nav>
+  
+  <main>
+    <div class="container">
+      <section class="card">
+        <h1>Cadastro de Produtos</h1>
+        
+        <!-- Formulário para cadastro/edição -->
+        <div class="form-section">
+          <h2>Adicionar / Editar Produto</h2>
+          <form id="productForm">
+            <!-- Campo oculto para armazenar o id (para edição) -->
+            <input type="hidden" id="productId">
+            <div class="form-group">
+              <label for="nome">Nome do Produto</label>
+              <input type="text" id="nome" placeholder="Digite o nome do produto" required>
+            </div>
+            <div class="form-group">
+              <label for="descricao">Descrição</label>
+              <textarea id="descricao" placeholder="Digite a descrição do produto" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="preco">Preço</label>
+              <input type="number" id="preco" placeholder="Digite o preço" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label for="quantidade">Quantidade</label>
+              <input type="number" id="quantidade" placeholder="Digite a quantidade" required>
+            </div>
+            <div class="form-group">
+              <label for="imagem">Imagem do Produto (URL ou Base64)</label>
+              <input type="text" id="imagem" placeholder="Insira a URL da imagem">
+            </div>
+            <button type="submit" class="btn">Salvar Produto</button>
+            <button type="reset" class="btn" id="cancelBtn">Cancelar</button>
+          </form>
+          <p id="msg"></p>
+        </div>
+        
+        <!-- Tabela de listagem dos produtos -->
+        <div class="table-section">
+          <h2>Lista de Produtos</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Imagem</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Preço</th>
+                <th>Quantidade</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody">
+              <!-- Linhas serão adicionadas dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Função para carregar os produtos do usuário
+    async function loadProducts() {
+      try {
+        const response = await fetch('/products');
+        if (!response.ok) throw new Error('Erro ao carregar produtos.');
+        const products = await response.json();
+        renderProducts(products);
+      } catch (error) {
+        console.error(error);
+        document.getElementById('msg').innerText = error.message;
+      }
+    }
+
+    // Renderiza a tabela de produtos com os botões de editar e excluir
+    function renderProducts(products) {
+      const tbody = document.getElementById('productTableBody');
+      tbody.innerHTML = '';
+      products.forEach(produto => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${produto.id}</td>
+          <td>${produto.imagem ? `<img src="${produto.imagem}" alt="${produto.nome}" width="50">` : 'Sem imagem'}</td>
+          <td>${produto.nome}</td>
+          <td>${produto.descricao}</td>
+          <td>R$ ${parseFloat(produto.preco).toFixed(2)}</td>
+          <td>${produto.quantidade}</td>
+          <td>
+            <button class="btn edit-btn" data-id="${produto.id}">Editar</button>
+            <button class="btn delete-btn" data-id="${produto.id}">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Adiciona ou atualiza um produto via API
+    async function saveProduct(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('productId').value;
+      const produto = {
+        nome: document.getElementById('nome').value,
+        descricao: document.getElementById('descricao').value,
+        preco: document.getElementById('preco').value,
+        quantidade: document.getElementById('quantidade').value,
+        imagem: document.getElementById('imagem').value
+      };
+
+      try {
+        let response;
+        if (id) {
+          // Atualiza produto existente
+          response = await fetch('/products/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produto)
+          });
+        } else {
+          // Adiciona um novo produto
+          response = await fetch('/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produto)
+          });
+        }
+        if (!response.ok) throw new Error('Erro ao salvar produto.');
+        document.getElementById('msg').innerText = "Produto salvo com sucesso!";
+        document.getElementById('productForm').reset();
+        document.getElementById('productId').value = "";
+        loadProducts();
+      } catch (error) {
+        console.error(error);
+        document.getElementById('msg').innerText = error.message;
+      }
+    }
+
+    // Exclui um produto via API
+    async function deleteProduct(id) {
+      if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+      try {
+        const response = await fetch('/products/' + id, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Erro ao excluir produto.');
+        loadProducts();
+      } catch (error) {
+        console.error(error);
+        alert(error.message);
+      }
+    }
+
+    // Preenche o formulário para edição de produto
+    async function editProduct(id) {
+      try {
+        const response = await fetch('/products');
+        if (!response.ok) throw new Error('Erro ao carregar produto para edição.');
+        const products = await response.json();
+        const produto = products.find(p => p.id == id);
+        if (!produto) {
+          alert('Produto não encontrado.');
+          return;
+        }
+        document.getElementById('productId').value = produto.id;
+        document.getElementById('nome').value = produto.nome;
+        document.getElementById('descricao').value = produto.descricao;
+        document.getElementById('preco').value = produto.preco;
+        document.getElementById('quantidade').value = produto.quantidade;
+        document.getElementById('imagem').value = produto.imagem;
+      } catch (error) {
+        console.error(error);
+        alert(error.message);
+      }
+    }
+
+    // Eventos
+    document.getElementById('productForm').addEventListener('submit', saveProduct);
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      document.getElementById('msg').innerText = "";
+      document.getElementById('productId').value = "";
+    });
+
+    // Delegação de eventos para os botões de editar e excluir na tabela
+    document.getElementById('productTableBody').addEventListener('click', function(e) {
+      if (e.target.classList.contains('edit-btn')) {
+        editProduct(e.target.dataset.id);
+      } else if (e.target.classList.contains('delete-btn')) {
+        deleteProduct(e.target.dataset.id);
+      }
+    });
+
+    // Carrega os produtos quando a página é carregada
+    document.addEventListener('DOMContentLoaded', loadProducts);
+  </script>
+</body>
+</html>
